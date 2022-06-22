@@ -2,14 +2,14 @@
 --@noahrepublic
 
 local Engine = {
-	Utilities = script.Utilities,
-	StartUp = script.StartUp:GetChildren(),
-	Services = script.Services:GetChildren(),
+	Utilities = script.Parent.Utilities,
+	StartUp = script.Parent.StartUp:GetChildren(),
+	Services = script.Parent.Services:GetChildren(),
 	LoadedServices = {}
 }
 Engine.__index = Engine
 
-local Utilities = script.Utilities
+local Utilities = script.Parent.Utilities
 
 -- Functions --
 
