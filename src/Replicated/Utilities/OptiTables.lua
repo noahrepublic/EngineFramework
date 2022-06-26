@@ -17,7 +17,7 @@ end
 
 -- Public:
 
-function OptimizedTables.new(t :table, size :number) -- init
+function OptimizedTables.new(t, size :number) -- init
     if size == nil then
         t = t or {}
     else
