@@ -214,7 +214,8 @@ local placeId = game.PlaceId
 
 local IsStudio = RunService:IsStudio()
 
-local CriticalState = false -- If true, we will take it easier on the requests.
+local dataError = false
+local ErrorQueue = {}
 
 -- Functions --
 
@@ -295,6 +296,12 @@ local function GetBudget()
 	return DataStoreService:GetRequestBudgetForRequestType(Enum.DataStoreRequestType.UpdateAsync)
 end
 
+local function NewError(key)
+	ErrorQueue[key] = true
+	task.delay(SETTINGS.IssueState_T, function()
+		ErrorQueue[key] = nil
+	end)
+end
 
 local function UpdateData(new_data, key)
 
@@ -514,13 +521,14 @@ function Data:SetGlobal(name, data :table)
     return self.MetaData.Global[name]
 end
 
-function Data:GetGlobals(name)
-    local global = self.MetaData.Global
-    self.MetaData.Global = {}
-    return self.MetaData.Global
+function Data:GetGlobal(name)
+    return self.MetaData.Global[name]
 end
 
--- Connections --
+function Data:RemoveGlobal(name)
+	self.MetaData.Global[name] = nil
+end
+    
 
 DataService._forceLoadReady:Connect(function(data)
 	print("Forceload ready!")
