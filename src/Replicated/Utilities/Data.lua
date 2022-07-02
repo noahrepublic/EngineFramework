@@ -301,6 +301,9 @@ local function NewError(key)
 	task.delay(SETTINGS.IssueState_T, function()
 		ErrorQueue[key] = nil
 	end)
+	if #ErrorQueue > SETTINGS.IssueQueue_Max then
+	DataService._CriticalStateSignal:Fire(true)
+	end
 end
 
 local function UpdateData(new_data, key)
@@ -328,6 +331,8 @@ local function UpdateData(new_data, key)
 		end
 		if not success then
 			print("Data did not save... " .. err) -- add RequestIssue() in future
+			
+			NewError(key)
 		else
 			print("DATA IS SAVED!!!!")
 			DataService._LoadedData[key] = new_data
@@ -476,7 +481,6 @@ function DataService:LoadData(key, method, rebuild) -- method = "forceload", "de
 				print("Server does not have access to this data. READ ONLY")
 			end
 		end
-		-- TODO: Make globals do something?
 		return setmetatable(DataService._LoadedData[key], Data)
     else
         print("Offline Mode, switching to mock datastores")
@@ -534,6 +538,11 @@ DataService._forceLoadReady:Connect(function(data)
 	print("Forceload ready!")
 	data.MetaData.Forceload = false
 	data:Release()
+end)
+
+DayaService._CriticalStateSignal:Connect(function(state)
+    dataError = state
+    DataService._using_mock_datastores = state -- but we continue the queue just incase
 end)
 
 
