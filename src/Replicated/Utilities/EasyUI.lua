@@ -23,6 +23,17 @@ local KnownProperties = {
 }
 
 -- Functions --
+-- Private:
+
+local function BuildComponent(component_type, name)
+   local build = Instance.new(component_type)
+   if not build then
+      return nil
+   end
+   build.Name = name
+   
+end
+-- Public:
 
 function EasyUI.new(name) -- Called for new GUI component
    return setmetatable({
@@ -47,14 +58,15 @@ function Components:Build()
    if type(self._Build) == "string" and type(self._Parent._Build) ~= "string" then
       -- build
       
-      local err, success = pcall(Instance.new, self._Build)
+      local err, success, build = pcall(Instance.new, self._Build)
+      print(build)
       if not success then
          error("EasyUI | "..err)
       end
    elseif type(self._Parent._Build) == "string" then
       error("EasyUI | You need to build the parent object first!)
    else
-      warn("EasyUI | This object is already built!
+      warn("EasyUI | This object is already built! Maybe you mean Rebuild?")
    end
 end
 
