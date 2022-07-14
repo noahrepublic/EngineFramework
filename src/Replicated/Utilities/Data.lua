@@ -404,10 +404,7 @@ end
 
 
 local function BindToClose()
-	if IsStudio then
-		task.spawn(StartQueue)
-		task.wait(2)
-	else
+	if not IsStudio then -- no point in waiting, using mock datastores
 		DataService._serviceLock = true
 		task.spawn(StartQueue)
 		print("Starting save sequence...")
