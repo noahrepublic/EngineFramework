@@ -384,9 +384,9 @@ local function StartQueue()
 			local key = data.MetaData.Key
 			if key then
 				local response = UpdateData(data, key)
-				if response and CriticalState then
+				if response and dataError then
 					DataService._CriticalStateSignal:Fire(false)
-					CriticalState = false
+					dataError = false
 				end
 			end
 		end
@@ -537,7 +537,7 @@ DataService._forceLoadReady:Connect(function(data)
 	data:Release()
 end)
 
-DayaService._CriticalStateSignal:Connect(function(state)
+DataService._CriticalStateSignal:Connect(function(state)
     dataError = state
     DataService._using_mock_datastores = state -- but we continue the queue just incase
 end)
