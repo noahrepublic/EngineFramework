@@ -46,7 +46,7 @@ end
 function Components:CreateComponent(component_type, name) -- i would add type checking however i am on mobile so it fills my screen and looks ugly, just like this comment
    local component = setmetatable({
       _Children = {},
-      _Build = component_type
+      _Build = component_type,
       _Name = name,
       _Parent = self
    }, Components[self._Children][name])
