@@ -596,7 +596,7 @@ local timer = TimeSync:Sync()
 print(timer)
 
 timer.Synced:Connect(function()
-	print("SYNCED TIME!", timer.offset, "PING: ", timer.network_interval * 1000)
+	print("SYNCED TIME!", timer.offset, "PING: ", timer.network_interval * 2000)
 end)]]></ProtectedString>
 					<int64 name="SourceAssetId">-1</int64>
 					<BinaryString name="Tags"></BinaryString>
@@ -1962,7 +1962,7 @@ function Timer:Run(sync_request, delay_request)
             return Timer:GetTime() - client_timer
         end
 
-        Timer.Stop = Instance.new("BindableEvent").Event
+        Timer._Stop = Instance.new("BindableEvent").Event
 
         Timer.Active = true
         Timer.Stop:Connect(function()
@@ -1976,6 +1976,10 @@ function Timer:Run(sync_request, delay_request)
             end
         end)
         
+        function Timer:Stop()
+            Timer._Stop:Fire()
+        end
+
         return Timer
     elseif RunService:IsClient() then
         Timer._SyncedEvent = Instance.new("BindableEvent")
@@ -2000,7 +2004,6 @@ function Timer:Run(sync_request, delay_request)
         Timer.network_interval = 0
         Timer.last_sync = 0
 
-        
         return Timer
     end
     
