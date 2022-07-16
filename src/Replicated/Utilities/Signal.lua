@@ -1,7 +1,7 @@
 
 --@noahrepublic
---@date 07/15/22
---@version 1.0
+--@created 07/15/22
+--@updated 07/15/22
 
 
 local Signal = {}
