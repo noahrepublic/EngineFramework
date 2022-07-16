@@ -6,10 +6,10 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 -- Variables --
 
 local Engine = require(ReplicatedStorage:FindFirstChild("Common"):FindFirstChild("Engine"))
-
+local require = Engine.Require
 Engine.Start()
 
-local Data = Engine.Require("Data")
+local Data = require("Data")
 
 local template = {
     ["Hi"] = 1
