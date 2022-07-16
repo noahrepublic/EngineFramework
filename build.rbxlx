@@ -583,7 +583,21 @@ gcLgc4RKxr21zq2UlJSM]]></BinaryString>
 					<string name="Name">Client</string>
 					<token name="RunContext">0</token>
 					<string name="ScriptGuid">{62D7130F-9DE8-47BD-970D-9D9B1C295230}</string>
-					<ProtectedString name="Source">print(&quot;Hello world, from client!&quot;)</ProtectedString>
+					<ProtectedString name="Source"><![CDATA[
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local TimeFlder = ReplicatedStorage:FindFirstChild("Common"):FindFirstChild("Utilities").Time
+
+local sync_request = TimeFlder:WaitForChild("TimeSyncRequest")
+local delay_request = TimeFlder:WaitForChild("TimeDelayRequest")
+
+local TimeSync = require(TimeFlder:FindFirstChild("TimeSync"))
+local timer = TimeSync:Sync()
+print(timer)
+
+timer.Synced:Connect(function()
+	print("SYNCED TIME!", timer.offset, "PING: ", timer.network_interval * 1000)
+end)]]></ProtectedString>
 					<int64 name="SourceAssetId">-1</int64>
 					<BinaryString name="Tags"></BinaryString>
 					<UniqueId name="UniqueId">46af552ad96b45b002c395e50001f7c1</UniqueId>
@@ -805,11 +819,10 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 -- Variables --
 
 local Engine = require(ReplicatedStorage:FindFirstChild("Common"):FindFirstChild("Engine"))
+local require = Engine.Require
 
-Engine.Start()
-
-local Signal = Engine.Require("Signal")
-
+local Timers = require("TimeSync")
+Timers:Sync()
 ]]></ProtectedString>
 				<int64 name="SourceAssetId">-1</int64>
 				<BinaryString name="Tags"></BinaryString>
@@ -853,8 +866,8 @@ local Signal = Engine.Require("Signal")
 
 local Engine = {
 	Utilities = script.Parent.Utilities,
-	StartUp = script.Parent.StartUp:GetChildren(),
-	Services = script.Parent.Services:GetChildren(),
+	StartUp = script.Parent.StartUp,
+	Services = script.Parent.Services,
 	LoadedServices = {}
 }
 Engine.__index = Engine
@@ -863,30 +876,17 @@ local Utilities = script.Parent.Utilities
 
 -- Functions --
 
-function Engine.Start()
-	for _, v in pairs(Engine.StartUp) do
-		local success, msg = pcall(function()
-			require(v)
-		end)
-		if not success then
-			warn("Error loading " .. v.Name .. ": " .. msg)
-		else
-			print("Loaded " .. v.Name)
-		end
-	end
-
-	for _, v in pairs(Engine.Services) do
-		local service = require(v)
-		Engine.LoadedServices[v] = service
-	end
-end
-
 function Engine.Require(name)
-	if Utilities[name] then
+	if Utilities:FindFirstChild(name) then
 		return require(Utilities[name])
-	elseif Engine.StartUp[name] then
+	elseif Engine.Services:FindFirstChild(name) then
 		return require(Engine.StartUp[name])
 	else
+		for _, module in pairs(Utilities:GetDescendants()) do
+			if module.Name == name then
+				return require(module)
+			end
+		end
 		warn("Engine.Require: " .. name .. " not found.")
 	end
 end
@@ -1167,7 +1167,9 @@ return OptimizedTables]]></ProtectedString>
 						<ProtectedString name="Source"><![CDATA[
 -- @noahrepublic
 -- @version 1.01
--- @date 2022-06-21
+-- @created 2022-06-21
+-- @lastmodified 07/15/22
+
 
 --[[ Data Store Handler
     TODO:
@@ -1550,9 +1552,9 @@ local function StartQueue()
 			local key = data.MetaData.Key
 			if key then
 				local response = UpdateData(data, key)
-				if response and CriticalState then
+				if response and dataError then
 					DataService._CriticalStateSignal:Fire(false)
-					CriticalState = false
+					dataError = false
 				end
 			end
 		end
@@ -1730,8 +1732,8 @@ return DataService]]></ProtectedString>
 						<string name="ScriptGuid">{3D8AEC71-288E-47D9-8EAD-D1AB54667DB5}</string>
 						<ProtectedString name="Source"><![CDATA[
 --@noahrepublic
---@date 07/15/22
---@version 1.0
+--@created 07/15/22
+--@updated 07/15/22
 
 
 local Signal = {}
@@ -1861,6 +1863,159 @@ return Signal]]></ProtectedString>
 						<BinaryString name="Tags"></BinaryString>
 						<UniqueId name="UniqueId">695dd0ad809f8f9402e3456b0002e9e1</UniqueId>
 					</Properties>
+				</Item>
+				<Item class="Folder" referent="RBX6F5F6059FC4048ACADAF6023BF46B0DD">
+					<Properties>
+						<BinaryString name="AttributesSerialize"></BinaryString>
+						<string name="Name">Time</string>
+						<int64 name="SourceAssetId">-1</int64>
+						<BinaryString name="Tags"></BinaryString>
+						<UniqueId name="UniqueId">695dd0ad809f8f9402e3456b003e952f</UniqueId>
+					</Properties>
+					<Item class="ModuleScript" referent="RBX438A6A46935D4A5A935C5E41998DF89F">
+						<Properties>
+							<BinaryString name="AttributesSerialize"></BinaryString>
+							<Content name="LinkedSource"><null></null></Content>
+							<string name="Name">TimeSync</string>
+							<string name="ScriptGuid">{512EE701-CECE-4BCC-A7C0-E92E1BB76060}</string>
+							<ProtectedString name="Source"><![CDATA[
+--@noahrepublic
+--@creation 07/15/22
+--@lastmodified 07/15/22
+--@version 1.0
+
+local RunService = game:GetService("RunService")
+
+local TimeSync = {}
+TimeSync.__index = TimeSync
+
+local TimeFlder = script.Parent
+
+local sync_request
+local delay_request
+
+if RunService:IsServer() then
+    sync_request = Instance.new("RemoteEvent")
+    delay_request = Instance.new("RemoteFunction")
+    sync_request.Name = "TimeSyncRequest"
+    delay_request.Name = "TimeDelayRequest"
+    sync_request.Parent = TimeFlder
+    delay_request.Parent = TimeFlder
+else
+    sync_request = TimeFlder:FindFirstChild("TimeSyncRequest")
+    delay_request = TimeFlder:FindFirstChild("TimeDelayRequest")
+end
+
+-- Functions --
+-- Public:
+
+function TimeSync:Sync()
+    local timer = require(TimeFlder.Timer):Run(sync_request, delay_request)
+    return timer
+end
+
+return TimeSync]]></ProtectedString>
+							<int64 name="SourceAssetId">-1</int64>
+							<BinaryString name="Tags"></BinaryString>
+							<UniqueId name="UniqueId">695dd0ad809f8f9402e3456b003e9538</UniqueId>
+						</Properties>
+					</Item>
+					<Item class="ModuleScript" referent="RBXC9A42DE8C3BF4ABAAC15A5FFB9FD7774">
+						<Properties>
+							<BinaryString name="AttributesSerialize"></BinaryString>
+							<Content name="LinkedSource"><null></null></Content>
+							<string name="Name">Timer</string>
+							<string name="ScriptGuid">{4416BB6E-9B97-4AE3-8C06-7FABE4857FEB}</string>
+							<ProtectedString name="Source"><![CDATA[
+--@noahrepublic
+--@creation 07/15/22
+--@lastmodified 07/15/22
+--@version 1.0
+
+local RunService = game:GetService("RunService")
+
+local Timer = {
+    sync_request = nil,
+    delay_request = nil,
+}
+Timer.__index = Timer
+
+local recursive_delay = 5
+
+-- Functions --
+
+-- Public:
+
+function Timer:Run(sync_request, delay_request)
+    assert(not Timer.sync_request and not Timer.delay_request, "Timer already initialized.")
+    assert(sync_request, "sync_request is nil")
+    assert(delay_request, "delay_request is nil")
+    
+    Timer.sync_request = sync_request
+    Timer.delay_request = delay_request
+
+    if RunService:IsServer() then
+        Timer.sync_request.OnServerEvent:Connect(function(player)
+            Timer.sync_request:FireClient(player, Timer:GetTime())
+        end)
+        Timer.delay_request.OnServerInvoke = function(_, client_timer)
+            return Timer:GetTime() - client_timer
+        end
+
+        Timer.Stop = Instance.new("BindableEvent").Event
+
+        Timer.Active = true
+        Timer.Stop:Connect(function()
+            Timer.Active = false
+        end)
+        
+        task.delay(recursive_delay, function()
+            while Timer.Active do
+                Timer.sync_request:FireAllClients(Timer:GetTime())
+                task.wait(recursive_delay)
+            end
+        end)
+        
+        return Timer
+    elseif RunService:IsClient() then
+        Timer._SyncedEvent = Instance.new("BindableEvent")
+        Timer.Synced = Timer._SyncedEvent.Event
+        Timer.Synced:Connect(function()
+            Timer.last_sync = Timer:GetTime()
+        end)
+        Timer.sync_request.OnClientEvent:Connect(function(server_timer)
+            local server_client = Timer:GetTime() - server_timer
+
+            local client_server = Timer.delay_request:InvokeServer(Timer:GetTime())
+
+            Timer.offset = (server_client - client_server)/2
+            Timer.network_interval = (server_client + client_server)/2
+
+            Timer._SyncedEvent:Fire()
+        end)
+
+        Timer.sync_request:FireServer()
+
+        Timer.offset = 0
+        Timer.network_interval = 0
+        Timer.last_sync = 0
+
+        
+        return Timer
+    end
+    
+end
+
+function Timer:GetTime()
+    return tick()
+end
+
+return Timer]]></ProtectedString>
+							<int64 name="SourceAssetId">-1</int64>
+							<BinaryString name="Tags"></BinaryString>
+							<UniqueId name="UniqueId">695dd0ad809f8f9402e3456b005b7dbb</UniqueId>
+						</Properties>
+					</Item>
 				</Item>
 			</Item>
 			<Item class="Folder" referent="RBX11AD92DE71AF465885820A35589CB9E7">
