@@ -1,3 +1,4 @@
+--@https://github.com/noahrepublic/EngineFramework/blob/main/src/Replicated/Utilities/Signal.lua
 
 --@noahrepublic
 --@created 07/15/22
