@@ -41,7 +41,7 @@ function Soap:Scrub(r)
     end
     
     for index, step in pairs(tasks) do
-        if step:IsA("RBXScriptConnection") then
+        if typeof(step) == "RBXScriptConnection" then
             step:Disconnect()
         elseif step:IsA("Tween") then
             step:Stop()
