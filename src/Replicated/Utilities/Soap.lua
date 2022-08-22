@@ -28,9 +28,6 @@ function Soap:Add(job, priority)
 	if priority == "High" then priority = tasks._High else priority = tasks._Default end
 	-- temporary, later i will use smart insert once i make it
 	table.insert(priority, job)
-	if priority == tasks._High then
-		Soap:Add(task.spawn(self:Scrub(true)))
-	end
 	return job
 end
 
@@ -43,7 +40,7 @@ function Soap:Scrub(r)
 	for index, step in pairs(tasks) do
 		if typeof(step) == "RBXScriptConnection" then
 			step:Disconnect()
-		elseif step:IsA("Tween") then
+		elseif typeof(step) == "Tween" then
 			step:Stop()
 		elseif type(step) == "function" then
 			step()
